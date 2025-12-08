@@ -1,0 +1,183 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -----------------------------------------------------
+//   USER
+// -----------------------------------------------------
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  wallet         Wallet?
+  sessions       Session[]
+  accounts       Account[]
+  transactions   Transaction[]       @relation("userTransactions")
+  withdrawalOTPs WithdrawalOTP[]
+  withdrawals    WithdrawalRequest[]
+  deposits       Deposit[]
+}
+
+// -----------------------------------------------------
+//   MULTI-CHAIN WALLET
+// -----------------------------------------------------
+model Wallet {
+  id     String @id @default(uuid())
+  userId String @unique // enforce 1:1 mapping
+
+  address String @unique
+
+  encryptedPrivateKey String
+  iv                  String
+  tag                 String
+
+  balance   Decimal  @default(0.0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  // relationships
+  transactions Transaction[]
+  deposits     Deposit[]
+  withdrawals  WithdrawalRequest[]
+}
+
+// -----------------------------------------------------
+//   DEPOSITS
+// -----------------------------------------------------
+model Deposit {
+  id       String @id @default(uuid())
+  walletId String
+  userId   String
+
+  amount    Decimal
+  txHash    String?       @unique
+  status    DepositStatus @default(PENDING)
+  chain     String        @default("ETH")
+  createdAt DateTime      @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+enum DepositStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+// -----------------------------------------------------
+//   WITHDRAWAL REQUESTS
+// -----------------------------------------------------
+model WithdrawalRequest {
+  id         String           @id @default(uuid())
+  userId     String
+  walletId   String
+  chain      String           @default("ETH")
+  address    String
+  amount     Decimal
+  fee        Float?
+  txHash     String?          @unique
+  status     WithdrawalStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  approvedAt DateTime?
+  approvedBy String? // or convert to a relation if needed
+
+  user   User   @relation(fields: [userId], references: [id])
+  wallet Wallet @relation(fields: [walletId], references: [id])
+}
+
+enum WithdrawalStatus {
+  PENDING
+  OTP_VERIFIED
+  APPROVED
+  BROADCASTED
+  COMPLETED
+  REJECTED
+}
+
+// -----------------------------------------------------
+//   TRANSACTION LOG (UNIFIED HISTORY)
+// -----------------------------------------------------
+model Transaction {
+  id            String          @id @default(uuid())
+  userId        String
+  walletId      String?
+  chain         String          @default("ETH")
+  type          TransactionType
+  amount        Decimal
+  fee           Float?
+  address       String?
+  from          String?
+  to            String?
+  txHash        String?         @unique
+  status        String // option: convert to enum
+  createdAt     DateTime        @default(now())
+  confirmations Int?
+
+  user   User    @relation("userTransactions", fields: [userId], references: [id])
+  wallet Wallet? @relation(fields: [walletId], references: [id])
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  SYSTEM_CREDIT
+  SYSTEM_DEBIT
+}
+
+// -----------------------------------------------------
+//   WITHDRAWAL OTP TABLE
+// -----------------------------------------------------
+model WithdrawalOTP {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String
+  type      String   @default("withdrawal")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// -----------------------------------------------------
+//   NEXT-AUTH MODELS
+// -----------------------------------------------------
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  access_token      String? @db.Text
+  refresh_token     String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
