@@ -3,6 +3,7 @@ import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import { ethers } from "ethers";
 import { prisma } from "@/lib/prisma";
+import { TransactionType } from "@prisma/client";
 
 const connection = new IORedis(
   process.env.REDIS_URL || "redis://127.0.0.1:6379"
@@ -59,7 +60,7 @@ export const depositWorker = new Worker(
       data: {
         walletId: wallet.id,
         userId: wallet.userId,
-        type: "deposit",
+        type: TransactionType.DEPOSIT,
         amount: tx.value.toString(),
         txHash,
         from: tx.from,
