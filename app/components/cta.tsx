@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export const CTA = () => {
+  const router = useRouter();
   return (
     <section className="py-28 bg-linear-to-r from-cyan-500 to-blue-500 text-white text-center relative overflow-hidden">
       <motion.div
@@ -19,6 +21,9 @@ export const CTA = () => {
           withdraw, and trade with ease.
         </p>
         <motion.button
+          onClick={() => {
+            router.push("/auth/sign-in");
+          }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="px-10 py-4 bg-white text-cyan-600 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"

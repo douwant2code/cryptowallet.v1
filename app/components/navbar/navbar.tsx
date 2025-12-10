@@ -108,12 +108,30 @@ export const Navbar = () => {
             ))}
 
             <motion.button
+              onClick={() => {
+                router.push("/auth/sign-in");
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-2 rounded-full font-semibold shadow-md hover:shadow-lg transition-all"
             >
               Get Started
             </motion.button>
+
+            {/* Close menu on link click */}
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2 rounded-full font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => {
+                router.push("/auth/sign-in");
+              }}
+            >
+              Sign In / Sign Up
+            </motion.button>
+
+            {/* Close menu on link click */}
           </motion.div>
         )}
       </AnimatePresence>
